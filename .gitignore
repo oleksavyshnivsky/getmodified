@@ -1,0 +1,8 @@
+.DS_Store
+@eaDir/
+app/lastdate.txt
+app/lastdatex.txt
+NEW/**
+ZIP/**
+test.txt
+!**/.keep
