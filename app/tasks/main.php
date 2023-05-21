@@ -5,8 +5,8 @@
 // ————————————————————————————————————————————————————————————————————————————————
 
 // Ціль — директорія і/або zip
-$copyToDir = checkArgument('nocopy') === null;
-$copyToZIP = checkArgument('zip') !== null;
+$copyToDir = !array_key_exists('nocopy', $args);
+$copyToZIP = array_key_exists('zip', $args);
 if (!$copyToDir and !$copyToZIP) exit('Нікуди копіювати файли.');
 
 // Опорна дата (копіювати файли, змінені після неї)
@@ -17,7 +17,7 @@ if (!$lastdate_txt) {
 	$dateN = (int)checkArgument('daten');
 	$lastdate_txt = isset($dates[$dateN]) ? $dates[$dateN] : (isset($dates[0]) ? $dates[0]: null);
 }
-$lastdate = strtotime($lastdate_txt);
+$lastdate = strtotime($lastdate_txt??'');
 
 // Нова опорна дата
 $new_lastdate_unix = time();
@@ -29,13 +29,13 @@ $path = realpath(SOURCE);
 // ————————————————————————————————————————————————————————————————————————————————
 // 
 // ————————————————————————————————————————————————————————————————————————————————
-if (!file_exists(TARGET) or !is_dir(TARGET)) mkdir(TARGET);
-if (!file_exists(TARGET_ZIP) or !is_dir(TARGET_ZIP)) mkdir(TARGET_ZIP);
+if ($copyToDir and (!file_exists(TARGET) or !is_dir(TARGET))) mkdir(TARGET);
+if ($copyToZIP and (!file_exists(TARGET_ZIP) or !is_dir(TARGET_ZIP))) mkdir(TARGET_ZIP);
 
 // ————————————————————————————————————————————————————————————————————————————————
 // Очистка директорії результату
 // ————————————————————————————————————————————————————————————————————————————————
-foreach (new DirectoryIterator(TARGET) as $fileInfo) {
+if ($copyToDir) foreach (new DirectoryIterator(TARGET) as $fileInfo) {
 	if (!$fileInfo->isDot()) {
 		$pathname = $fileInfo->getPathname();
 		is_dir($pathname) ? removeDirectory($pathname) : unlink($pathname);
@@ -76,14 +76,14 @@ $counter = 0;
 
 foreach ($iterator as $pathname => $fileInfo) {
 	if (filemtime($pathname) > $lastdate or filectime($pathname) > $lastdate) {
-		$subpath = $iterator->getSubPath();
+		$subpath = str_replace('\\', '/', $iterator->getSubPath()); // Виправлення шляху для Linux
 		$basename = basename($pathname);
 
 		// Пропускати файли з іменем як у EXCLUDE
 		if (in_array($basename, EXCLUDE)) continue;
 
 		// Створення піддиректорії, якщо потрібно
-		if (!file_exists(TARGET.'/'.$subpath)) mkdir(TARGET.'/'.$subpath, 0777, true);
+		if ($copyToDir and !file_exists(TARGET.'/'.$subpath)) mkdir(TARGET.'/'.$subpath, 0777, true);
 
 		// Повідомлення у консолі і лічильник
 		echo $pathname, PHP_EOL;

@@ -2,6 +2,7 @@
 @eaDir/
 app/lastdate.txt
 app/lastdatex.txt
+app/config.php
 NEW/**
 ZIP/**
 test.txt

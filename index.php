@@ -19,6 +19,7 @@ date_default_timezone_set(in_array('Europe/Kyiv', DateTimeZone::listIdentifiers(
 // Конфіг
 // ————————————————————————————————————————————————————————————————————————————————
 define('DIR_BASE', basename(__DIR__));
+if (!file_exists('app/config.php')) copy('app/config.example.php', 'app/config.php');
 include_once 'app/config.php';
 
 // ————————————————————————————————————————————————————————————————————————————————
@@ -47,7 +48,7 @@ switch ($task) {
 $args = getArguments();
 
 // Вибрана гілка
-$branch = 'lastdate'.(checkArgument('x')!==null?'x':'');
+$branch = 'lastdate'.(array_key_exists('x', $args)?'x':'');
 
 // Файл з датами
 define('LASTDATEFILE', 'app/'.$branch.'.txt');
