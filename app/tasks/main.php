@@ -43,6 +43,17 @@ if ($copyToDir) foreach (new DirectoryIterator(TARGET) as $fileInfo) {
 }
 
 // ————————————————————————————————————————————————————————————————————————————————
+// Read .gitignore file, if exists
+// ————————————————————————————————————————————————————————————————————————————————
+$gitIgnorePatterns = EXCLUDE;
+$gitIgnoreFile = SOURCE . '/.gitignore';
+if (file_exists($gitIgnoreFile)) {
+	$gitIgnorePatterns = file($gitIgnoreFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+	$gitIgnorePatterns = array_map('trim', $gitIgnorePatterns);
+}
+if (in_array(DIR_BASE, $gitIgnorePatterns)) $gitIgnorePatterns[] = DIR_BASE;
+
+// ————————————————————————————————————————————————————————————————————————————————
 // Рекурсивний перебір директорій і файлів проекту
 // ————————————————————————————————————————————————————————————————————————————————
 /**
@@ -52,7 +63,24 @@ if ($copyToDir) foreach (new DirectoryIterator(TARGET) as $fileInfo) {
  * @return bool True if you need to recurse or if the item is acceptable
  */
 $filter = function ($file, $key, $iterator) {
-	if ($iterator->hasChildren() && !in_array($file->getFilename(), EXCLUDE)) return true;
+	if ($iterator->hasChildren()) {
+		global $gitIgnorePatterns;
+
+		$subpath = str_replace('\\', '/', $iterator->getSubPath()); // Виправлення шляху для Linux
+		$basename = basename($file);
+		$subpath_basename = ($subpath?$subpath.'/':'').$basename;
+
+		$use = true;
+		foreach ($gitIgnorePatterns as $pattern) {
+			if (fnmatch($pattern, $subpath_basename) or fnmatch($pattern, $subpath_basename.'/')) {
+				$use = false;
+				break;
+			}
+		}
+
+		 // && !in_array($file->getFilename(), EXCLUDE)
+		return $use;
+	}
 	return $file->isFile();
 };
 
@@ -62,11 +90,12 @@ $innerIterator = new RecursiveDirectoryIterator(
 );
 $iterator = new RecursiveIteratorIterator(
 	new RecursiveCallbackFilterIterator($innerIterator, $filter)
+	, RecursiveIteratorIterator::SELF_FIRST
 );
 
 // Створення ZIP-файлу
 if ($copyToZIP) {
-	$zipfilename = TARGET_ZIP.basename(realpath('..')).date('-Ymd-Hi').'.zip';
+	$zipfilename = TARGET_ZIP.basename(realpath(SOURCE)).date('-Ymd-Hi').'.zip';
 	$zip = new ZipArchive();
 	if (!$zip->open($zipfilename, ZIPARCHIVE::CREATE)) exit('Помилка створення ZIP-файлу ' . $zipfilename);
 }
@@ -75,12 +104,23 @@ if ($copyToZIP) {
 $counter = 0;
 
 foreach ($iterator as $pathname => $fileInfo) {
+	if (!$fileInfo->isFile()) continue;
+
 	if (filemtime($pathname) > $lastdate or filectime($pathname) > $lastdate) {
 		$subpath = str_replace('\\', '/', $iterator->getSubPath()); // Виправлення шляху для Linux
 		$basename = basename($pathname);
+		$subpath_basename = ($subpath?$subpath.'/':'').$basename;
 
 		// Пропускати файли з іменем як у EXCLUDE
-		if (in_array($basename, EXCLUDE)) continue;
+		// if (in_array($basename, EXCLUDE)) continue;
+		$use = true;
+		foreach ($gitIgnorePatterns as $pattern) {
+			if (fnmatch($pattern, $subpath_basename)) {
+				$use = false;
+				break;
+			}
+		}
+		if (!$use) continue;
 
 		// Створення піддиректорії, якщо потрібно
 		if ($copyToDir and !file_exists(TARGET.'/'.$subpath)) mkdir(TARGET.'/'.$subpath, 0777, true);
@@ -90,8 +130,8 @@ foreach ($iterator as $pathname => $fileInfo) {
 		$counter++;
 
 		// Дія
-		if ($copyToDir) copy($pathname, TARGET.'/'.$subpath.'/'.$basename);
-		if ($copyToZIP) $zip->addFile($pathname, $subpath.'/'.$basename);
+		if ($copyToDir) copy($pathname, TARGET.'/'.$subpath_basename);
+		if ($copyToZIP) $zip->addFile($pathname, $subpath_basename);
 	}
 }
 

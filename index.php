@@ -3,7 +3,7 @@
  * Копіювання змінених файлів
  * 
  * @author ODE <dying.escape@gmail.com>
- * @copyright 2020
+ * @copyright 2023
  */
 
 
