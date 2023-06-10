@@ -52,6 +52,7 @@ if (file_exists($gitIgnoreFile)) {
 	$gitIgnorePatterns = array_map('trim', $gitIgnorePatterns);
 }
 if (in_array(DIR_BASE, $gitIgnorePatterns)) $gitIgnorePatterns[] = DIR_BASE;
+if (in_array('.git', $gitIgnorePatterns)) $gitIgnorePatterns[] = '.git';
 
 // ————————————————————————————————————————————————————————————————————————————————
 // Рекурсивний перебір директорій і файлів проекту
