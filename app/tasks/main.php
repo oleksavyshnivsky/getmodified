@@ -51,8 +51,8 @@ if (file_exists($gitIgnoreFile)) {
 	$gitIgnorePatterns = file($gitIgnoreFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
 	$gitIgnorePatterns = array_map('trim', $gitIgnorePatterns);
 }
-if (in_array(DIR_BASE, $gitIgnorePatterns)) $gitIgnorePatterns[] = DIR_BASE;
-if (in_array('.git', $gitIgnorePatterns)) $gitIgnorePatterns[] = '.git';
+if (!in_array(DIR_BASE, $gitIgnorePatterns)) $gitIgnorePatterns[] = DIR_BASE;
+if (!in_array('.git', $gitIgnorePatterns)) $gitIgnorePatterns[] = '.git';
 
 // ————————————————————————————————————————————————————————————————————————————————
 // Рекурсивний перебір директорій і файлів проекту
