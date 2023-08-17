@@ -3,6 +3,7 @@
 app/lastdate.txt
 app/lastdatex.txt
 app/config.php
+config/**
 NEW/**
 ZIP/**
 test.txt

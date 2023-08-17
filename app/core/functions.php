@@ -61,3 +61,23 @@ function cmp($a, $b) {
 	return ($a['time'] < $b['time']) ? 1 : -1;
 }
 
+// ————————————————————————————————————————————————————————————————————————————————
+// Консольні повідомлення
+// ————————————————————————————————————————————————————————————————————————————————
+function error($error = '', $crit = true) {
+	echo "\e[31m";
+	echo $error?:'Щось пішло не так', PHP_EOL;
+	echo "\e[0m";
+	if ($crit) exit;
+}
+
+function success($msg = '') {
+	echo "\e[32m";
+	echo $msg?:'Дія виконана', PHP_EOL;
+	echo "\e[0m"; 
+}
+
+
+function notify($msg = '') {
+	echo $msg?:'', PHP_EOL; 
+}

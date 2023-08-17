@@ -1,72 +1,65 @@
 <?php
 
 /**
- * Копіювання змінених файлів
- * 
- * @author ODE <dying.escape@gmail.com>
- * @copyright 2023
+ * Додавання нового проєкту
  */
+
+// ————————————————————————————————————————————————————————————————————————————————
+// Команда виклику
+// ————————————————————————————————————————————————————————————————————————————————
+$tpl = 'php index.php makeproject name={name} source={source} [target={target}] [ziptarget={ziptarget}]';
+
+// ————————————————————————————————————————————————————————————————————————————————
+// Атрибути
+// ————————————————————————————————————————————————————————————————————————————————
+$name = checkArgument('name');
+$source = checkArgument('source');
+$target = checkArgument('target');
+$ziptarget = checkArgument('ziptarget');
+
+if (!$name)
+	$stop = 'Не задана назва проєкту';
+elseif (file_exists('config/'.$name))
+	$stop = 'Такий проєкт уже існує';
+elseif (!$source)
+	$stop = 'Не задане джерело';
+elseif (!file_exists($source))
+	$stop = 'Недоступний шлях до джерела';
+elseif (!$target and !$ziptarget)
+	$stop = 'Не задана директорія для результату';
+elseif ((!$target or !file_exists($target)) and (!$ziptarget or !file_exists($ziptarget)))
+	$stop = 'Недоступний шлях до директорії для результату';
+
+if (isset($stop)) {
+	error($stop, false);
+	exit('Приклад виклику: '.$tpl.PHP_EOL);
+}
+
+if ($source) $source = rtrim($source, '/').'/';
+if ($target) $target = rtrim($target, '/').'/';
+if ($ziptarget) $ziptarget = rtrim($ziptarget, '/').'/';
+
+// ————————————————————————————————————————————————————————————————————————————————
+// Створити конфіг-директорію
+// ————————————————————————————————————————————————————————————————————————————————
+$dir_config = 'config/'.$name;
+mkdir($dir_config) or error('Не вдалося створити директорію '.$dir_config);
+
+// ————————————————————————————————————————————————————————————————————————————————
+// Створити конфіг
+// ————————————————————————————————————————————————————————————————————————————————
+$config = file_get_contents('app/config.example.php');
+if ($source) $config = str_replace("const SOURCE = '..';", "const SOURCE = '{$source}';", $config); 
+if ($target) $config = str_replace("const TARGET = './NEW/';", "const TARGET = '{$target}';", $config); 
+if ($ziptarget) $config = str_replace("const TARGET_ZIP = './ZIP/';", "const TARGET_ZIP = '{$ziptarget}';", $config); 
+file_put_contents($dir_config.'/config.php', $config);
+
+// ————————————————————————————————————————————————————————————————————————————————
+// Створити файл для дат
+// ————————————————————————————————————————————————————————————————————————————————
+touch($dir_config.'/lastdate.txt');
 
 // ————————————————————————————————————————————————————————————————————————————————
 // 
 // ————————————————————————————————————————————————————————————————————————————————
-chdir(__DIR__);
-header('Content-Type: text/plain; charset=utf-8');
-date_default_timezone_set(in_array('Europe/Kyiv', DateTimeZone::listIdentifiers())
-	? 'Europe/Kyiv' : 'Europe/Kiev');
-
-// ————————————————————————————————————————————————————————————————————————————————
-// Конфіг
-// ————————————————————————————————————————————————————————————————————————————————
-define('DIR_BASE', basename(__DIR__));
-
-// ————————————————————————————————————————————————————————————————————————————————
-// Функції
-// ————————————————————————————————————————————————————————————————————————————————
-include_once 'app/core/functions.php';
-
-// ————————————————————————————————————————————————————————————————————————————————
-// Вибір завдання
-// ————————————————————————————————————————————————————————————————————————————————
-if (PHP_SAPI === 'cli')	$task = $argc > 1 ? (strpos($argv[1], '=') === false ? $argv[1] : 'main') : 'main';
-else 					$task = filter_input(INPUT_GET, 'task');
-
-switch ($task) {
-	case '?': $task = 'help'; break;
-	case 'x':
-	case 'nocopy':
-	case 'zip': $task = 'main'; break;
-	default: $task = sanitizeFileName($task);
-}
-
-// ————————————————————————————————————————————————————————————————————————————————
-// Аргументи
-// ————————————————————————————————————————————————————————————————————————————————
-$args = getArguments();
-
-// ————————————————————————————————————————————————————————————————————————————————
-// Проєкт
-// ————————————————————————————————————————————————————————————————————————————————
-$project = checkArgument('project');
-
-// ————————————————————————————————————————————————————————————————————————————————
-// Конфіг
-// ————————————————————————————————————————————————————————————————————————————————
-$dir_config = $project ? 'config/'.$project : 'app';
-if (!file_exists($dir_config)) exit('Такий проєкт відсутній');
-if (!file_exists($dir_config.'/config.php')) copy('app/config.example.php', $dir_config.'/config.php');
-include_once $dir_config.'/config.php';
-
-// Вибрана гілка
-$branch = 'lastdate'.(array_key_exists('x', $args)?'x':'');
-
-// Файл з датами
-define('LASTDATEFILE', $dir_config.'/'.$branch.'.txt');
-if (!file_exists(LASTDATEFILE)) touch(LASTDATEFILE);
-
-// ————————————————————————————————————————————————————————————————————————————————
-// Перехід до завдання
-// ————————————————————————————————————————————————————————————————————————————————
-if (!file_exists('app/tasks/'.$task.'.php')) error('Такого завдання немає: '.$task);
-
-include 'app/tasks/'.$task.'.php';
+success('Виконано');
